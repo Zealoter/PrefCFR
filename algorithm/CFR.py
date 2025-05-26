@@ -1,5 +1,4 @@
 from open_spiel.python.algorithms.cfr import _CFRSolver
-import pyspiel
 import numpy as np
 import attr
 import collections
@@ -110,14 +109,14 @@ def _pref_regret_matching(cumulative_regrets, legal_actions, pref_config):
     info_state_policy = {}
     if sum_positive_regrets > 0:
         '''
-        这是Pref-CFR(RM)的公式
+        This is the formula for Pref-CFR(RM), corresponding to Equations 13 and 14 in the paper.
         '''
         # for action in legal_actions:
         #     positive_action_regret = max(0.0, cumulative_regrets[action])
         #     info_state_policy[action] = (
         #             positive_action_regret * delta[action] / sum_positive_regrets)
         '''
-        这是Pref-CFR(BR)的公式
+        This is the formula for Pref-CFR(RM), corresponding to Equations 15 and 16 in the paper.
         '''
         max_idx = 0
         for action in legal_actions:

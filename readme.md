@@ -9,8 +9,8 @@ This repository is the accompanying code for the paper PrefCFR. This method allo
 ## Quick Start
 **Clone the repo:**
 ```bash
-git clone 
-cd xxx
+git clone https://github.com/Zealoter/PrefCFR.git
+cd PrefCFR
 ```
 **Install dependencies:**
 ```bash
@@ -18,3 +18,28 @@ pip install -r requirements.txt
 ```
 
 ## Training Examples
+
+
+The paper defaults to running the Kuhn experiment. Simply execute the following command:
+
+```bash
+python PreCFRMain.py
+```
+
+This will reproduce the results shown in Figure 2 of the paper. If you wish to run other experiments, you can modify the parameters in `PreCFRMain.py`.
+
+To reproduce Figure 3:
+1. Change Lines 169-170 in `PreCFRMain.py` to:
+   ```python
+   # game_name = "kuhn_poker"
+   game_name = "leduc_poker"
+   ```
+2. Comment out Lines 139-143.
+3. Uncomment Lines 148-154.
+
+To reproduce Figure 4:
+1. Follow the same steps as above.
+2. Instead of Lines 148-154, uncomment Lines 159-163.
+
+
+

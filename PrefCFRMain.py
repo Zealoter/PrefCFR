@@ -1,5 +1,3 @@
-import numpy as np
-
 import pyspiel
 import os
 import time
@@ -19,11 +17,12 @@ from joblib import Parallel, delayed
 
 
 def train_parallel(train_config):
+    game_name = train_config['game_name']
     path = train_config["path"]
     solver = train_config["solver"]
     game = train_config["game"]
 
-    counter = 1000000
+    counter = 10000000
     result_data = {
         "node_touch"    : [],
         "exploitability": [],
@@ -40,7 +39,11 @@ def train_parallel(train_config):
             result_data["node_touch"].append(solver.node_touched)
             result_data["exploitability"].append(conv)
             result_data["time"].append(now_time - start_time)
-            result_data["policy1"].append(solver.get_policy("0"))
+            if game_name == "kuhn_poker":
+                result_data["policy1"].append(solver.get_policy("0"))
+            elif game_name == "leduc_poker":
+                result_data["policy1"].append(solver.get_policy(
+                    "[Observer: 0][Private: 5][Round 1][Player: 0][Pot: 2][Money: 99 99][Round1: ][Round2: ]"))
             print("node_touch", "time", now_time - start_time, solver.node_touched, "exploitability", conv)
 
         if solver.node_touched >= counter:
@@ -49,14 +52,26 @@ def train_parallel(train_config):
             result_data["node_touch"].append(solver.node_touched)
             result_data["exploitability"].append(conv)
             result_data["time"].append(now_time - start_time)
-            result_data["policy1"].append(solver.get_policy(
-                "0"))
+            if game_name == "kuhn_poker":
+                result_data["policy1"].append(solver.get_policy("0"))
+            elif game_name == "leduc_poker":
+                result_data["policy1"].append(solver.get_policy(
+                    "[Observer: 0][Private: 5][Round 1][Player: 0][Pot: 2][Money: 99 99][Round1: ][Round2: ]"))
             print("node_touch", "time", now_time - start_time, solver.node_touched, "exploitability", conv)
             break
 
         solver.iteration()
-
-    show_info_list = ["0", "1", "2"]
+    if game_name == "kuhn_poker":
+        show_info_list = ["0", "1", "2"]
+    elif game_name == "leduc_poker":
+        show_info_list = [
+            "[Observer: 0][Private: 0][Round 1][Player: 0][Pot: 2][Money: 99 99][Round1: ][Round2: ]",
+            "[Observer: 0][Private: 1][Round 1][Player: 0][Pot: 2][Money: 99 99][Round1: ][Round2: ]",
+            "[Observer: 0][Private: 2][Round 1][Player: 0][Pot: 2][Money: 99 99][Round1: ][Round2: ]",
+            "[Observer: 0][Private: 3][Round 1][Player: 0][Pot: 2][Money: 99 99][Round1: ][Round2: ]",
+            "[Observer: 0][Private: 4][Round 1][Player: 0][Pot: 2][Money: 99 99][Round1: ][Round2: ]",
+            "[Observer: 0][Private: 5][Round 1][Player: 0][Pot: 2][Money: 99 99][Round1: ][Round2: ]"
+        ]
 
     solver.show_policy(show_info_list)
     os.makedirs(path)
@@ -72,12 +87,13 @@ def train_parallel(train_config):
 
 
 def train_one_setting(mode, game_name, result_file_path, pref_mode=None):
-    num_cpu = 1
-    num_train_times = 1
+    num_cpu = 10
+    num_train_times = 10
     train_config_list = []
     for train_times in range(num_train_times):
         print(mode, pref_mode, train_times)
         train_config = {
+            "game_name": game_name,
             "game": pyspiel.load_game(game_name, game_config[game_name]),
             "path": result_file_path + '/' + mode + '_' + pref_mode + '/' + str(train_times)
         }
@@ -115,27 +131,30 @@ def train(game_name):
         ]
     )
     '''
-    kuhn的实验，这里只演示了PrefCFR(BR)这种形式，如果想要其他形式的PrefCFR，可以自行在algorithm.PrefCFR修改代码。对应文章中图1和图2
+    In the Kuhn experiment, only the PrefCFR(BR) form is demonstrated here.
+    If you need other forms of PrefCFR,
+    you can modify the code in algorithm.CFR Line 114.
+    PrefCFR by yourself. This corresponds to Figures 1 and 2 in the paper.
     '''
-    # train_one_setting("PrefCFR", game_name, result_file_path, "defensive10")
-    # train_one_setting("PrefCFR", game_name, result_file_path, "defensive5")
-    # train_one_setting("CFR", game_name, result_file_path, "normal")
-    # train_one_setting("PrefCFR", game_name, result_file_path, "offensive5")
-    # train_one_setting("PrefCFR", game_name, result_file_path, "offensive10")
+    train_one_setting("PrefCFR", game_name, result_file_path, "defensive10")
+    train_one_setting("PrefCFR", game_name, result_file_path, "defensive5")
+    train_one_setting("CFR", game_name, result_file_path, "normal")
+    train_one_setting("PrefCFR", game_name, result_file_path, "offensive5")
+    train_one_setting("PrefCFR", game_name, result_file_path, "offensive10")
 
     '''
-    Leduc的实验，对应文章中图3
+    The Leduc experiment corresponds to Figure 3 in the paper.
     '''
-    train_one_setting("ES-MCPrefCFR", game_name, result_file_path, "offensive_10_05")
-    train_one_setting("ES-MCPrefCFR", game_name, result_file_path, "offensive_10_00")
-    train_one_setting("ES-MCPrefCFR", game_name, result_file_path, "offensive_5_05")
-    train_one_setting("ES-MCPrefCFR", game_name, result_file_path, "normal")
-    train_one_setting("ES-MCPrefCFR", game_name, result_file_path, "defensive_10_05")
-    train_one_setting("ES-MCPrefCFR", game_name, result_file_path, "defensive_10_00")
-    train_one_setting("ES-MCPrefCFR", game_name, result_file_path, "defensive_5_05")
+    # train_one_setting("ES-MCPrefCFR", game_name, result_file_path, "offensive_10_05")
+    # train_one_setting("ES-MCPrefCFR", game_name, result_file_path, "offensive_10_00")
+    # train_one_setting("ES-MCPrefCFR", game_name, result_file_path, "offensive_5_05")
+    # train_one_setting("ES-MCPrefCFR", game_name, result_file_path, "normal")
+    # train_one_setting("ES-MCPrefCFR", game_name, result_file_path, "defensive_10_05")
+    # train_one_setting("ES-MCPrefCFR", game_name, result_file_path, "defensive_10_00")
+    # train_one_setting("ES-MCPrefCFR", game_name, result_file_path, "defensive_5_05")
 
     '''
-    Leduc的实验，对应文章中图3
+    The Leduc experiment corresponds to Figure 4 in the paper.
     '''
     # train_one_setting("ES-MCPrefCFR", game_name, result_file_path, "offensive_5_05")
     # train_one_setting("ES-MCPrefCFR", game_name, result_file_path, "offensive_5_10")
@@ -147,8 +166,8 @@ def train(game_name):
 
 
 if __name__ == '__main__':
-    # game_name = "kuhn_poker"
-    game_name = "leduc_poker"
+    game_name = "kuhn_poker"
+    # game_name = "leduc_poker"
     test_name = train(game_name)
 
     plt.figure(figsize=(32, 10), dpi=240)
